@@ -1,0 +1,270 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PropertyStatus {
+  AVAILABLE
+  PENDING
+  SOLD
+}
+
+enum PropertyType {
+  APARTMENT
+  VILLA
+  HOUSE
+  STUDIO
+  PLOT
+  COMMERCIAL
+}
+
+enum InquiryStatus {
+  OPEN
+  CONTACTED
+  VISIT_SCHEDULED
+  NEGOTIATING
+  CLOSED
+  LOST
+}
+
+enum VerificationLevel {
+  BASIC
+  REVIEWED
+  VERIFIED
+}
+
+enum ListingSource {
+  OWNER
+  AGENT
+  BUILDER
+  ADMIN_IMPORT
+}
+
+enum VisitStatus {
+  REQUESTED
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+model Role {
+  id    Int     @id @default(autoincrement())
+  name  String  @unique
+  users User[]
+}
+
+model User {
+  id                    Int                    @id @default(autoincrement())
+  name                  String
+  email                 String                 @unique
+  password              String
+  phone                 String?
+  verified              Boolean                @default(false)
+  roleId                Int
+  role                  Role                   @relation(fields: [roleId], references: [id])
+  properties            Property[]             @relation("AgentProperties")
+  inquiries             Inquiry[]
+  favorites             Favorite[]
+  refreshTokens         RefreshToken[]
+  visits                Visit[]                @relation("BuyerVisits")
+  assignedVisits        Visit[]                @relation("AgentVisits")
+  passwordResets        PasswordReset[]
+  ownedShortlists       Shortlist[]            @relation("ShortlistOwner")
+  shortlistMemberships  ShortlistCollaborator[]
+  shortlistComments     ShortlistComment[]
+  shortlistVotes        ShortlistVote[]
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+}
+
+model Property {
+  id                Int               @id @default(autoincrement())
+  title             String
+  description       String
+  price             Decimal           @db.Decimal(12, 2)
+  location          String
+  latitude          Float?
+  longitude         Float?
+  type              PropertyType
+  bedrooms          Int
+  bathrooms         Int
+  areaSqFt          Float?
+  status            PropertyStatus    @default(AVAILABLE)
+  verified          Boolean           @default(false)
+  verificationLevel VerificationLevel @default(BASIC)
+  listingSource     ListingSource     @default(AGENT)
+  qualityScore      Int               @default(60)
+  responseTimeHours Int?
+  lastVerifiedAt    DateTime?
+  amenities         PropertyAmenity[]
+  images            PropertyImage[]
+  inquiries         Inquiry[]
+  visits            Visit[]
+  favorites         Favorite[]
+  shortlistItems    ShortlistItem[]
+  agentId           Int
+  agent             User              @relation("AgentProperties", fields: [agentId], references: [id])
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  @@index([location])
+  @@index([price])
+  @@index([type])
+}
+
+model PropertyImage {
+  id          Int      @id @default(autoincrement())
+  url         String
+  isCover     Boolean  @default(false)
+  propertyId  Int
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+}
+
+model Amenity {
+  id        Int               @id @default(autoincrement())
+  name      String            @unique
+  properties PropertyAmenity[]
+}
+
+model PropertyAmenity {
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  propertyId Int
+  amenity    Amenity  @relation(fields: [amenityId], references: [id], onDelete: Cascade)
+  amenityId  Int
+  @@id([propertyId, amenityId])
+}
+
+model Inquiry {
+  id              Int           @id @default(autoincrement())
+  message         String
+  name            String
+  email           String
+  phone           String?
+  status          InquiryStatus @default(OPEN)
+  lastContactedAt DateTime?
+  propertyId      Int?
+  property        Property?     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  userId          Int?
+  user            User?         @relation(fields: [userId], references: [id])
+  createdAt       DateTime      @default(now())
+}
+
+model Favorite {
+  id         Int       @id @default(autoincrement())
+  userId     Int
+  propertyId Int
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  property   Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime  @default(now())
+  @@unique([userId, propertyId])
+}
+
+model Visit {
+  id          Int         @id @default(autoincrement())
+  scheduledAt DateTime
+  status      VisitStatus @default(REQUESTED)
+  notes       String?
+  rating      Int?
+  propertyId  Int
+  property    Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  userId      Int
+  user        User        @relation("BuyerVisits", fields: [userId], references: [id], onDelete: Cascade)
+  agentId     Int
+  agent       User        @relation("AgentVisits", fields: [agentId], references: [id], onDelete: Cascade)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Shortlist {
+  id            Int                   @id @default(autoincrement())
+  name          String
+  shareToken    String                @unique
+  ownerId       Int
+  owner         User                  @relation("ShortlistOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  collaborators ShortlistCollaborator[]
+  items         ShortlistItem[]
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+}
+
+model ShortlistCollaborator {
+  id          Int       @id @default(autoincrement())
+  shortlistId Int
+  userId      Int
+  canEdit     Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  shortlist   Shortlist @relation(fields: [shortlistId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([shortlistId, userId])
+}
+
+model ShortlistItem {
+  id          Int              @id @default(autoincrement())
+  shortlistId Int
+  propertyId  Int
+  note        String?
+  priority    Int              @default(0)
+  createdAt   DateTime         @default(now())
+  shortlist   Shortlist        @relation(fields: [shortlistId], references: [id], onDelete: Cascade)
+  property    Property         @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  comments    ShortlistComment[]
+  votes       ShortlistVote[]
+
+  @@unique([shortlistId, propertyId])
+}
+
+model ShortlistComment {
+  id              Int           @id @default(autoincrement())
+  shortlistItemId Int
+  authorId        Int
+  body            String
+  createdAt       DateTime      @default(now())
+  shortlistItem   ShortlistItem @relation(fields: [shortlistItemId], references: [id], onDelete: Cascade)
+  author          User          @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+model ShortlistVote {
+  id              Int           @id @default(autoincrement())
+  shortlistItemId Int
+  userId          Int
+  value           Int
+  createdAt       DateTime      @default(now())
+  shortlistItem   ShortlistItem @relation(fields: [shortlistItemId], references: [id], onDelete: Cascade)
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([shortlistItemId, userId])
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  tokenHash String   @unique
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model OtpCode {
+  id        Int      @id @default(autoincrement())
+  email     String
+  codeHash  String
+  attempts  Int      @default(0)
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model PasswordReset {
+  id        Int      @id @default(autoincrement())
+  tokenHash String   @unique
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}

@@ -1,0 +1,29 @@
+.DS_Store
+
+# Local environment and logs
+.env
+.env.*
+!.env.example
+.logs_*.txt
+
+# Build outputs and caches
+dist/
+.next/
+.turbo/
+coverage/
+*.tsbuildinfo
+
+# Dependencies
+node_modules/
+
+# Local runtime data
+.local-postgres/
+api/uploads/
+
+# Archive artifacts
+*.zip
+
+# Local scratch files
+/Downloading
+/prisma
+/props-backend@1.0.0
