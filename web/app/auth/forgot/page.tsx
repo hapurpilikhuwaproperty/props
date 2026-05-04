@@ -1,6 +1,9 @@
 "use client";
+import Link from 'next/link';
 import { useState } from 'react';
-import axios from 'axios';
+import { api } from '../../../lib/api';
+
+const currentOrigin = () => (typeof window === 'undefined' ? undefined : window.location.origin);
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -11,8 +14,7 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     setMsg('');
     try {
-      const backend = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
-      await axios.post(`${backend}/auth/forgot`, { email });
+      await api.post('/auth/forgot', { email, redirectUrl: currentOrigin() });
       setMsg('If this email exists, reset instructions have been sent.');
     } catch (err: any) {
       setMsg(err.response?.data?.message || 'Request failed');
@@ -30,8 +32,10 @@ export default function ForgotPasswordPage() {
         <button onClick={submit} disabled={loading} className="w-full bg-brand text-white py-2 rounded-lg font-semibold">
           {loading ? 'Sending...' : 'Send reset link'}
         </button>
+        <Link href="/auth/login" className="block text-center text-sm text-brand">
+          Back to login
+        </Link>
       </div>
     </div>
   );
 }
-

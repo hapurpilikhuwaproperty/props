@@ -13,7 +13,7 @@ export const BRAND = {
 };
 
 export const CONTACT = {
-  PHONE: process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+91 12345 67890',
-  EMAIL: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'hello@example.com',
-  WHATSAPP: process.env.NEXT_PUBLIC_WHATSAPP || '+911234567890',
+  PHONE: process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+91 7678171738',
+  EMAIL: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'hapurpilikhuwaproperty@gmail.com',
+  WHATSAPP: process.env.NEXT_PUBLIC_WHATSAPP || '+917678171738',
 };

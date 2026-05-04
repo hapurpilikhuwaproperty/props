@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import * as intelligenceService from '../services/intelligenceService';
-import { requireAuth } from '../middleware/auth';
+import * as intelligenceService from '../services/intelligenceService.js';
+import { requireAuth } from '../middleware/auth.js';
 
 const router = Router();
 

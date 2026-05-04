@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -51,6 +51,30 @@ enum VisitStatus {
   CANCELLED
 }
 
+enum AuthProvider {
+  PASSWORD
+  EMAIL_MAGIC
+  PHONE_OTP
+  GOOGLE
+}
+
+enum OtpChannel {
+  EMAIL
+  PHONE
+}
+
+enum SellerVerificationStatus {
+  NOT_REQUESTED
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AuthChallengeType {
+  ADMIN_MFA_LOGIN
+  ADMIN_MFA_SETUP
+}
+
 model Role {
   id    Int     @id @default(autoincrement())
   name  String  @unique
@@ -60,16 +84,27 @@ model Role {
 model User {
   id                    Int                    @id @default(autoincrement())
   name                  String
-  email                 String                 @unique
-  password              String
-  phone                 String?
+  email                 String?                @unique
+  password              String?
+  phone                 String?                @unique
   verified              Boolean                @default(false)
+  emailVerifiedAt       DateTime?
+  phoneVerifiedAt       DateTime?
+  sellerVerificationStatus SellerVerificationStatus @default(NOT_REQUESTED)
+  sellerVerifiedAt      DateTime?
+  authProvider          AuthProvider           @default(PASSWORD)
+  googleSubject         String?                @unique
+  mfaEnabled            Boolean                @default(false)
+  mfaSecret             String?
+  mfaVerifiedAt         DateTime?
   roleId                Int
   role                  Role                   @relation(fields: [roleId], references: [id])
   properties            Property[]             @relation("AgentProperties")
   inquiries             Inquiry[]
   favorites             Favorite[]
   refreshTokens         RefreshToken[]
+  authSessions          AuthSession[]
+  authChallenges        AuthChallenge[]
   visits                Visit[]                @relation("BuyerVisits")
   assignedVisits        Visit[]                @relation("AgentVisits")
   passwordResets        PasswordReset[]
@@ -93,6 +128,7 @@ model Property {
   bedrooms          Int
   bathrooms         Int
   areaSqFt          Float?
+  videoUrl          String?           @db.Text
   status            PropertyStatus    @default(AVAILABLE)
   verified          Boolean           @default(false)
   verificationLevel VerificationLevel @default(BASIC)
@@ -117,7 +153,7 @@ model Property {
 
 model PropertyImage {
   id          Int      @id @default(autoincrement())
-  url         String
+  url         String   @db.Text
   isCover     Boolean  @default(false)
   propertyId  Int
   property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
@@ -240,23 +276,34 @@ model ShortlistVote {
 }
 
 model RefreshToken {
-  id        Int      @id @default(autoincrement())
-  tokenHash String   @unique
-  userId    Int
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  expiresAt DateTime
-  revoked   Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id          Int          @id @default(autoincrement())
+  tokenHash   String       @unique
+  userId      Int
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessionId   Int?
+  session     AuthSession? @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  expiresAt   DateTime
+  revoked     Boolean      @default(false)
+  revokedAt   DateTime?
+  lastUsedAt  DateTime?
+  createdAt   DateTime     @default(now())
+
+  @@index([userId])
+  @@index([sessionId])
 }
 
 model OtpCode {
-  id        Int      @id @default(autoincrement())
-  email     String
-  codeHash  String
-  attempts  Int      @default(0)
-  expiresAt DateTime
-  used      Boolean  @default(false)
-  createdAt DateTime @default(now())
+  id         Int        @id @default(autoincrement())
+  email      String?
+  identifier String
+  channel    OtpChannel @default(EMAIL)
+  codeHash   String
+  attempts   Int        @default(0)
+  expiresAt  DateTime
+  used       Boolean    @default(false)
+  createdAt  DateTime   @default(now())
+
+  @@index([identifier, channel])
 }
 
 model PasswordReset {
@@ -267,4 +314,45 @@ model PasswordReset {
   expiresAt DateTime
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model MagicLinkToken {
+  id         Int      @id @default(autoincrement())
+  tokenHash  String   @unique
+  email      String
+  expiresAt  DateTime
+  used       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@index([email])
+}
+
+model AuthSession {
+  id            Int            @id @default(autoincrement())
+  deviceId      String         @unique
+  userId        Int
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userAgent     String?
+  ipAddress     String?
+  lastUsedAt    DateTime       @default(now())
+  revokedAt     DateTime?
+  refreshTokens RefreshToken[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([userId])
+}
+
+model AuthChallenge {
+  id          Int               @id @default(autoincrement())
+  challengeId String            @unique
+  userId      Int
+  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        AuthChallengeType
+  secret      String?
+  expiresAt   DateTime
+  used        Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+
+  @@index([userId])
 }

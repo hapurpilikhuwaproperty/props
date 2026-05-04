@@ -8,6 +8,7 @@ import { getNextPathFromWindow } from '../../../lib/navigation';
 export default function RegisterPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [nextPath, setNextPath] = useState('/dashboard');
@@ -20,7 +21,11 @@ export default function RegisterPage() {
 
   const handleRegister = async () => {
     try {
-      const { data } = await api.post('/auth/register', { name, email, password });
+      if (!phone.trim()) {
+        setError('Mobile number is required');
+        return;
+      }
+      const { data } = await api.post('/auth/register', { name, email, phone, password });
       login(data.user);
       router.push(nextPath);
     } catch (err: any) {
@@ -45,6 +50,7 @@ export default function RegisterPage() {
           <div className="space-y-4">
             <input className="w-full border rounded-lg px-3 py-2" placeholder="Full name" value={name} onChange={(e) => setName(e.target.value)} />
             <input className="w-full border rounded-lg px-3 py-2" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <input className="w-full border rounded-lg px-3 py-2" placeholder="+91 mobile number" value={phone} onChange={(e) => setPhone(e.target.value)} />
             <input className="w-full border rounded-lg px-3 py-2" type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
             {error && <p className="text-sm text-red-600">{error}</p>}
             <button onClick={handleRegister} className="w-full bg-brand text-white py-2 rounded-lg font-semibold">Create account</button>

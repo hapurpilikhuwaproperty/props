@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { log } from '../utils/logger';
+import { log } from '../utils/logger.js';
 
 export const errorHandler = (err: any, _req: Request, res: Response, _next: NextFunction) => {
   log.error('Unhandled error', err);

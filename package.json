@@ -1,0 +1,19 @@
+{
+  "name": "props",
+  "version": "1.0.0",
+  "description": "Full-stack real estate listings app (Next.js 16 / React 19 / Tailwind, Express + Prisma + Postgres).",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "next": "^16.2.2",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "sharp": "^0.34.5",
+    "styled-jsx": "^5.1.6"
+  }
+}

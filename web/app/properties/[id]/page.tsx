@@ -8,6 +8,7 @@ import StickyDetailCTA from '../../../components/StickyDetailCTA';
 import FAQ from '../../../components/FAQ';
 import VisitPlannerModal from '../../../components/VisitPlannerModal';
 import { getServerJson, ServerApiError } from '../../../lib/server-api';
+import { resolveMediaUrl } from '../../../lib/media';
 
 async function fetchProperty(id: string): Promise<Property> {
   return getServerJson<Property>(`/properties/${id}`, { revalidate: 300 });
@@ -44,6 +45,8 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
 
   const locality = await fetchLocality(property.localitySlug);
   const cover = property.images.find((i) => i.isCover) || property.images[0];
+  const coverUrl = resolveMediaUrl(cover?.url);
+  const videoUrl = resolveMediaUrl(property.videoUrl);
   const price = Number(property.price);
   const area = property.areaSqFt ? Number(property.areaSqFt) : null;
   const pricePerSqFt = area ? Math.round(price / area) : null;
@@ -81,10 +84,16 @@ export default async function PropertyDetail({ params }: { params: Promise<{ id:
           <a href="#amenities" className="px-3 py-1 rounded-full border">Amenities</a>
           <a href="#location" className="px-3 py-1 rounded-full border">Location</a>
           <a href="#gallery" className="px-3 py-1 rounded-full border">Gallery</a>
+          {videoUrl && <a href="#video" className="px-3 py-1 rounded-full border">Video</a>}
         </div>
-        {cover && (
+        {coverUrl && (
           <div className="relative aspect-[4/3] rounded-3xl overflow-hidden">
-            <Image src={cover.url} alt={property.title} fill className="object-cover" />
+            <Image src={coverUrl} alt={property.title} fill className="object-cover" />
+          </div>
+        )}
+        {videoUrl && (
+          <div className="rounded-3xl overflow-hidden bg-black" id="video">
+            <video src={videoUrl} controls preload="metadata" className="aspect-video w-full" />
           </div>
         )}
         <div id="gallery">

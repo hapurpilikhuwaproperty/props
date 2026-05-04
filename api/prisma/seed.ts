@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  const roles = ['Admin', 'Agent', 'User'];
+  const roles = ['Admin', 'Seller', 'Guest', 'Agent', 'User'];
   for (const name of roles) {
     await prisma.role.upsert({ where: { name }, update: {}, create: { name } });
   }

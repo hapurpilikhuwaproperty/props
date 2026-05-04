@@ -11,7 +11,7 @@ export default function Footer() {
           <p className="text-sm text-slate-300">Email: <a href={`mailto:${CONTACT.EMAIL}`} className="underline">{CONTACT.EMAIL}</a></p>
         </div>
         <div className="space-y-2 text-sm text-slate-300">
-          <p>HQ: 221B Residency Lane, CA</p>
+          <p>Moh.Mandi, Railway Road, Pilkhuwa, Hapur, Uttar Pradesh</p>
           <p>Email: {CONTACT.EMAIL}</p>
         </div>
         <div className="text-right text-xs text-slate-500">© {new Date().getFullYear()} {BRAND.NAME}. All rights reserved.</div>

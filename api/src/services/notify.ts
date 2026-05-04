@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { config } from '../config';
+import { config } from '../config.js';
 
 // simple SMTP mailer; in prod swap to SES/SendGrid provider
 export async function sendLeadEmail(subject: string, body: string, toOverride?: string) {

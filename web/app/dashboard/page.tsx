@@ -9,7 +9,7 @@ type DashboardData = {
   user: {
     id: number;
     name: string;
-    email: string;
+    email: string | null;
     role: string;
   };
   stats: {
@@ -63,7 +63,7 @@ export default function DashboardPage() {
         const response = await api.get("/users/dashboard", { signal: controller.signal });
         if (!isActive) return;
         setData(response.data);
-        if (role === "agent" || role === "admin") {
+        if (canManageProperties(role)) {
           try {
             const { data: nextScorecard } = await api.get("/users/scorecard", { signal: controller.signal });
             if (!isActive) return;
@@ -111,12 +111,22 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
+          {isAdmin && (
+            <Link href="/dashboard/users" className="px-4 py-2 rounded-lg border font-medium">
+              Manage users
+            </Link>
+          )}
+          {canManage && (
+            <Link href="/dashboard/properties" className="px-4 py-2 rounded-lg border font-medium">
+              Manage properties
+            </Link>
+          )}
           {canManage && (
             <Link href="/dashboard/properties/new" className="bg-brand text-white px-4 py-2 rounded-lg font-semibold">
               + Add property
             </Link>
           )}
-          <Link href={canManage ? "/dashboard/leads" : "/dashboard/inquiries"} className="px-4 py-2 rounded-lg border font-medium">
+          <Link href="/dashboard/inquiries" className="px-4 py-2 rounded-lg border font-medium">
             View {canManage ? "leads" : "inquiries"}
           </Link>
           <Link href="/dashboard/shortlists" className="px-4 py-2 rounded-lg border font-medium">
@@ -155,7 +165,7 @@ export default function DashboardPage() {
         <section className="bg-white border rounded-2xl p-5 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">{canManage ? "Recent listings" : "Recommended next steps"}</h2>
-            {canManage && <Link href="/dashboard/leads" className="text-sm text-brand">See all</Link>}
+            {canManage && <Link href="/dashboard/properties" className="text-sm text-brand">See all</Link>}
           </div>
           {canManage ? (
             data.recentListings.length > 0 ? (
@@ -169,9 +179,17 @@ export default function DashboardPage() {
                         {listing.verified ? "Verified" : listing.verificationLevel?.replace("_", " ")} • Score {listing.qualityScore}/100 • {listing.inquiryCount} leads
                       </p>
                     </div>
-                    <div className="text-right">
+                    <div className="text-right space-y-2">
                       <p className="font-semibold text-brand-accent">₹{Number(listing.price).toLocaleString("en-IN")}</p>
                       <p className="text-xs uppercase tracking-wide text-slate-500">{listing.status} • {listing.freshnessDays ?? 0}d fresh</p>
+                      <div className="flex justify-end gap-2 text-xs">
+                        <Link href={`/properties/${listing.id}`} className="rounded-lg border px-3 py-1 font-medium text-slate-700">
+                          View
+                        </Link>
+                        <Link href={`/dashboard/properties/${listing.id}/edit`} className="rounded-lg border px-3 py-1 font-medium text-brand">
+                          Edit
+                        </Link>
+                      </div>
                     </div>
                   </div>
                 ))}

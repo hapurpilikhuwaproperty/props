@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid';
 import { Prisma } from '@prisma/client';
-import { prisma } from '../prisma/client';
-import { canonicalLocationName, slugifyLocation } from '../utils/location';
+import { prisma } from '../prisma/client.js';
+import { canonicalLocationName, slugifyLocation } from '../utils/location.js';
 
 const propertyInclude = {
   images: true,

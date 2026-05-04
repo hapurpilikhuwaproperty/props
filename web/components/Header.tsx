@@ -52,7 +52,9 @@ export default function Header() {
         <div className="hidden md:flex items-center gap-3">
           {isAuthed ? (
             <>
-              {isAdmin && <Link href="/dashboard" className="text-sm">Admin</Link>}
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium uppercase text-slate-600">{role}</span>
+              {isAdmin && <Link href="/dashboard/users" className="text-sm">Users</Link>}
+              {canAddProperty && <Link href="/dashboard/properties" className="text-sm">Properties</Link>}
               {canAddProperty && <Link href="/dashboard/properties/new" className="text-sm">Add property</Link>}
               <button onClick={logout} className="text-sm text-slate-600 hover:text-brand">Logout</button>
             </>
@@ -82,6 +84,9 @@ export default function Header() {
           <div className="px-4 py-3 flex gap-3 items-center">
             {isAuthed ? (
               <>
+                <span className="text-xs font-medium uppercase text-slate-500">{role}</span>
+                {isAdmin && <Link href="/dashboard/users" className="text-sm" onClick={() => setOpen(false)}>Users</Link>}
+                {canAddProperty && <Link href="/dashboard/properties" className="text-sm" onClick={() => setOpen(false)}>Properties</Link>}
                 <Link href="/dashboard" className="text-sm" onClick={() => setOpen(false)}>Dashboard</Link>
                 <button onClick={() => { logout(); setOpen(false); }} className="text-sm text-slate-600">Logout</button>
               </>

@@ -1,12 +1,12 @@
 import { Router } from 'express';
-import { prisma } from '../prisma/client';
-import { sendLeadEmail } from '../services/notify';
+import { prisma } from '../prisma/client.js';
+import { sendLeadEmail } from '../services/notify.js';
 import { z } from 'zod';
-import { leadLimiter } from '../middleware/rateLimit';
-import { log } from '../utils/logger';
-import { getCookie } from '../utils/cookies';
-import { config } from '../config';
-import { verifyAccessToken } from '../utils/jwt';
+import { leadLimiter } from '../middleware/rateLimit.js';
+import { log } from '../utils/logger.js';
+import { getCookie } from '../utils/cookies.js';
+import { config } from '../config.js';
+import { verifyAccessToken } from '../utils/jwt.js';
 
 const router = Router();
 

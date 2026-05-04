@@ -2,8 +2,13 @@ import rateLimit from 'express-rate-limit';
 import { Request } from 'express';
 
 const emailKey = (req: Request) => {
-  const email = typeof req.body?.email === 'string' ? req.body.email.trim().toLowerCase() : 'anonymous';
-  return `${req.ip}:${email}`;
+  const identifier =
+    typeof req.body?.email === 'string'
+      ? req.body.email.trim().toLowerCase()
+      : typeof req.body?.identifier === 'string'
+        ? req.body.identifier.trim().toLowerCase()
+        : 'anonymous';
+  return `${req.ip}:${identifier}`;
 };
 
 export const apiLimiter = rateLimit({

@@ -1,8 +1,9 @@
 import { Router } from 'express';
 import { VisitStatus } from '@prisma/client';
 import { z } from 'zod';
-import { prisma } from '../prisma/client';
-import { AuthRequest, requireAuth } from '../middleware/auth';
+import { prisma } from '../prisma/client.js';
+import { AuthRequest, requireAuth } from '../middleware/auth.js';
+import { isAdminRole, isSellerRole } from '../utils/roles.js';
 
 const router = Router();
 
@@ -18,8 +19,8 @@ const updateVisitSchema = z.object({
   rating: z.number().int().min(1).max(5).optional(),
 });
 
-const isAdmin = (role: string) => role === 'Admin';
-const canManageVisits = (role: string) => role === 'Admin' || role === 'Agent';
+const isAdmin = (role: string) => isAdminRole(role);
+const canManageVisits = (role: string) => isAdminRole(role) || isSellerRole(role);
 
 router.use(requireAuth);
 
@@ -28,7 +29,7 @@ router.get('/', async (req: AuthRequest, res, next) => {
     const role = req.user!.role;
     const where = isAdmin(role)
       ? {}
-      : role === 'Agent'
+      : isSellerRole(role)
         ? { agentId: req.user!.id }
         : { userId: req.user!.id };
 
@@ -102,7 +103,7 @@ router.patch('/:id', async (req: AuthRequest, res, next) => {
     const isAllowed = isAdmin(role) || isOwner || isAssignedAgent;
     if (!isAllowed) return res.status(403).json({ message: 'Forbidden' });
 
-    if (role === 'User' && parsed.status) {
+    if (!canManageVisits(role) && parsed.status) {
       return res.status(403).json({ message: 'Buyers cannot change visit workflow status.' });
     }
     if (canManageVisits(role) && parsed.rating) {

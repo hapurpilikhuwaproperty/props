@@ -3,9 +3,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Property } from '../types';
 import { useCompare } from '../lib/compare-context';
+import { resolveMediaUrl } from '../lib/media';
 
 export default function PropertyCard({ property }: { property: Property }) {
   const cover = property.images.find((img) => img.isCover) || property.images[0];
+  const coverUrl = resolveMediaUrl(cover?.url);
   const { toggle, isAdded } = useCompare();
   const price = Number(property.price);
   const area = (property as any).areaSqFt ? Number((property as any).areaSqFt) : null;
@@ -13,16 +15,19 @@ export default function PropertyCard({ property }: { property: Property }) {
   const ppsf = area ? Math.round(price / area) : null;
   return (
     <Link href={`/properties/${property.id}`} className="group block bg-white shadow-card rounded-2xl overflow-hidden hover-lift">
-      {cover && (
+      {coverUrl && (
         <div className="aspect-[4/3] relative">
           <Image
-            src={cover.url}
+            src={coverUrl}
             alt={property.title}
             fill
             className="object-cover transition duration-500 group-hover:scale-105"
-            placeholder="blur"
-            blurDataURL={cover.url + '?w=10&q=10'}
           />
+          {property.videoUrl && (
+            <span className="absolute left-3 top-3 rounded-full bg-black/65 px-3 py-1 text-xs font-semibold text-white">
+              Video
+            </span>
+          )}
         </div>
       )}
       <div className="p-4 space-y-2">

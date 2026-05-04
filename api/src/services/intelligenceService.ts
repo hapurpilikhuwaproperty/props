@@ -1,7 +1,7 @@
 import { InquiryStatus, Prisma, VisitStatus } from '@prisma/client';
-import { prisma } from '../prisma/client';
-import { localityProfiles } from '../data/localityProfiles';
-import { canonicalLocationName, localityAliases, slugifyLocation } from '../utils/location';
+import { prisma } from '../prisma/client.js';
+import { localityProfiles } from '../data/localityProfiles.js';
+import { canonicalLocationName, localityAliases, slugifyLocation } from '../utils/location.js';
 
 const propertyInclude = {
   images: true,

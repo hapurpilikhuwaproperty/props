@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { config } from '../config';
+import { config } from '../config.js';
 
 export const signAccessToken = (payload: object) =>
   jwt.sign(payload, config.accessTokenSecret as jwt.Secret, {

@@ -1,14 +1,15 @@
 import { Router } from 'express';
 import { InquiryStatus } from '@prisma/client';
-import { requireAuth, AuthRequest } from '../middleware/auth';
-import { prisma } from '../prisma/client';
+import { requireAuth, AuthRequest } from '../middleware/auth.js';
+import { prisma } from '../prisma/client.js';
 import { z } from 'zod';
-import { buildAgentScorecard, getRecommendedProperties } from '../services/intelligenceService';
+import { buildAgentScorecard, getRecommendedProperties } from '../services/intelligenceService.js';
+import { isAdminRole, isSellerRole, normalizeRole } from '../utils/roles.js';
 
 const router = Router();
 
-const isAdmin = (role: string) => role === 'Admin';
-const canManageListings = (role: string) => role === 'Admin' || role === 'Agent';
+const isAdmin = (role: string) => isAdminRole(role);
+const canManageListings = (role: string) => isAdminRole(role) || isSellerRole(role);
 const canManageInquiries = canManageListings;
 const parseIdParam = (value: string, label: string) => {
   const parsed = Number(value);
@@ -49,7 +50,7 @@ router.get('/me', requireAuth, async (req: AuthRequest, res, next) => {
     if (!user) return res.status(404).json({ message: 'User not found' });
     res.json({
       ...user,
-      role: user.role.name,
+      role: normalizeRole(user.role.name),
     });
   } catch (err) {
     next(err);
@@ -97,20 +98,21 @@ router.get('/dashboard', requireAuth, async (req: AuthRequest, res, next) => {
     if (!user) return res.status(404).json({ message: 'User not found' });
 
     const listingWhere = isAdmin(user.role.name) ? {} : { agentId: user.id };
-    const inquiryWhere = isAdmin(user.role.name)
+    const userRole = normalizeRole(user.role.name);
+    const inquiryWhere = isAdmin(userRole)
       ? {}
-      : user.role.name === 'Agent'
+      : isSellerRole(userRole)
         ? { property: { agentId: user.id } }
         : { userId: user.id };
-    const visitWhere = isAdmin(user.role.name)
+    const visitWhere = isAdmin(userRole)
       ? {}
-      : user.role.name === 'Agent'
+      : isSellerRole(userRole)
         ? { agentId: user.id }
         : { userId: user.id };
-    const staleListingWhere = isAdmin(user.role.name)
+    const staleListingWhere = isAdmin(userRole)
       ? { updatedAt: { lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }
       : { agentId: user.id, updatedAt: { lt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } };
-    const verifiedListingWhere = isAdmin(user.role.name)
+    const verifiedListingWhere = isAdmin(userRole)
       ? { verified: true }
       : { agentId: user.id, verified: true };
 
@@ -127,15 +129,15 @@ router.get('/dashboard', requireAuth, async (req: AuthRequest, res, next) => {
       recentInquiries,
       recentVisits,
     ] = await Promise.all([
-      canManageListings(user.role.name) ? prisma.property.count({ where: listingWhere }) : Promise.resolve(0),
+      canManageListings(userRole) ? prisma.property.count({ where: listingWhere }) : Promise.resolve(0),
       prisma.inquiry.count({ where: inquiryWhere }),
-      isAdmin(user.role.name) ? prisma.user.count() : Promise.resolve(0),
-      canManageListings(user.role.name) ? prisma.property.count({ where: verifiedListingWhere }) : Promise.resolve(0),
-      canManageListings(user.role.name) ? prisma.property.count({ where: staleListingWhere }) : Promise.resolve(0),
+      isAdmin(userRole) ? prisma.user.count() : Promise.resolve(0),
+      canManageListings(userRole) ? prisma.property.count({ where: verifiedListingWhere }) : Promise.resolve(0),
+      canManageListings(userRole) ? prisma.property.count({ where: staleListingWhere }) : Promise.resolve(0),
       prisma.inquiry.count({ where: { ...inquiryWhere, status: InquiryStatus.OPEN } }),
       prisma.inquiry.count({ where: { ...inquiryWhere, status: InquiryStatus.VISIT_SCHEDULED } }),
       prisma.visit.count({ where: { ...visitWhere, scheduledAt: { gte: new Date() } } }),
-      canManageListings(user.role.name)
+      canManageListings(userRole)
         ? prisma.property.findMany({
             where: listingWhere,
             orderBy: { createdAt: 'desc' },
@@ -168,7 +170,7 @@ router.get('/dashboard', requireAuth, async (req: AuthRequest, res, next) => {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: user.role.name,
+        role: userRole,
       },
       stats: {
         favorites: favoritesCount,
@@ -211,7 +213,7 @@ router.get('/inquiries', requireAuth, async (req: AuthRequest, res, next) => {
     const role = req.user!.role;
     const where = isAdmin(role)
       ? {}
-      : role === 'Agent'
+      : isSellerRole(role)
         ? { property: { agentId: req.user!.id } }
         : { userId: req.user!.id };
     const inquiries = await prisma.inquiry.findMany({
@@ -245,7 +247,7 @@ router.patch('/inquiries/:id', requireAuth, async (req: AuthRequest, res, next) 
     });
 
     if (!inquiry) return res.status(404).json({ message: 'Inquiry not found' });
-    if (req.user!.role !== 'Admin' && inquiry.property?.agentId !== req.user!.id) {
+    if (!isAdmin(req.user!.role) && inquiry.property?.agentId !== req.user!.id) {
       return res.status(403).json({ message: 'Forbidden' });
     }
 

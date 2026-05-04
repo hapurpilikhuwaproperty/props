@@ -11,6 +11,8 @@ export const api = axios.create({
 
 let refreshPromise: Promise<void> | null = null;
 
+export const authExpiredEvent = "props:auth-expired";
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -33,8 +35,22 @@ api.interceptors.response.use(
       }
       await refreshPromise;
       return api(originalRequest);
-    } catch (refreshError) {
-      return Promise.reject(refreshError);
+    } catch {
+      try {
+        await api.post("/auth/logout");
+      } catch {
+        // The refresh token is already unusable; clearing cookies is best-effort.
+      }
+
+      window.dispatchEvent(new Event(authExpiredEvent));
+      if (error.response) {
+        const responseData = typeof error.response.data === "object" && error.response.data !== null ? error.response.data : {};
+        error.response.data = {
+          ...responseData,
+          message: "Session expired. Please log in again.",
+        };
+      }
+      return Promise.reject(error);
     }
   },
 );

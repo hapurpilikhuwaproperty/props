@@ -10,6 +10,7 @@ import AboutBlock from '../components/AboutBlock';
 import BlogStrip from '../components/BlogStrip';
 import TrustBar from '../components/TrustBar';
 import HowWeWork from '../components/HowWeWork';
+import LatestPropertySlider from '../components/LatestPropertySlider';
 import { LocalitySummary, Property } from '../types';
 import LocalitySpotlight from '../components/LocalitySpotlight';
 import { getServerJson } from '../lib/server-api';
@@ -31,13 +32,23 @@ async function fetchLocalities(): Promise<LocalitySummary[]> {
   }
 }
 
+async function fetchLatest(): Promise<Property[]> {
+  try {
+    const data = await getServerJson<{ items: Property[] }>('/properties', { params: { pageSize: 8 }, revalidate: 120 });
+    return data.items;
+  } catch {
+    return [];
+  }
+}
+
 export default async function HomePage() {
-  const [featured, localities] = await Promise.all([fetchFeatured(), fetchLocalities()]);
+  const [featured, latest, localities] = await Promise.all([fetchFeatured(), fetchLatest(), fetchLocalities()]);
   return (
     <div>
       <Hero />
       <TrustBar />
       <LogosStrip />
+      <LatestPropertySlider properties={latest} />
       <FeaturedGrid properties={featured} />
       <TrendingGrid properties={featured} />
       <LocalitySpotlight items={localities} />

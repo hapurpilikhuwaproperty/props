@@ -27,12 +27,13 @@ export type Property = {
   localitySlug?: string;
   agentId?: number;
   images: { url: string; isCover: boolean }[];
+  videoUrl?: string | null;
   areaSqFt?: number | string | null;
   amenities?: { amenity: { id: number; name: string } }[];
   agent?: {
     id?: number;
     name: string;
-    email: string;
+    email?: string | null;
     phone?: string | null;
   };
   createdAt?: string;
@@ -43,7 +44,7 @@ export type AgentScorecard = {
   agent: {
     id: number;
     name: string;
-    email: string;
+    email?: string | null;
     phone?: string | null;
     role: string;
   };
@@ -134,12 +135,12 @@ export type Visit = {
   user?: {
     id: number;
     name: string;
-    email: string;
+    email?: string | null;
   };
   agent?: {
     id: number;
     name: string;
-    email: string;
+    email?: string | null;
   };
 };
 

@@ -1,11 +1,11 @@
 import { Router } from 'express';
-import { requireAuth, AuthRequest } from '../middleware/auth';
-import { validate } from '../middleware/validate';
-import { shortlistCommentSchema, shortlistCreateSchema, shortlistItemCreateSchema, shortlistItemUpdateSchema, shortlistVoteSchema } from '../schemas/shortlistSchemas';
-import * as shortlistService from '../services/shortlistService';
-import { getCookie } from '../utils/cookies';
-import { config } from '../config';
-import { verifyAccessToken } from '../utils/jwt';
+import { requireAuth, AuthRequest } from '../middleware/auth.js';
+import { validate } from '../middleware/validate.js';
+import { shortlistCommentSchema, shortlistCreateSchema, shortlistItemCreateSchema, shortlistItemUpdateSchema, shortlistVoteSchema } from '../schemas/shortlistSchemas.js';
+import * as shortlistService from '../services/shortlistService.js';
+import { getCookie } from '../utils/cookies.js';
+import { config } from '../config.js';
+import { verifyAccessToken } from '../utils/jwt.js';
 
 const router = Router();
 

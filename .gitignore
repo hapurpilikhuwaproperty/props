@@ -4,6 +4,9 @@
 .env
 .env.*
 !.env.example
+/hostinger-api.env
+/hostinger-web.env
+api/hostinger-api.env
 .logs_*.txt
 
 # Build outputs and caches

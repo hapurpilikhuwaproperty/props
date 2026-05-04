@@ -1,0 +1,5 @@
+ALTER TABLE `Property`
+  ADD COLUMN `videoUrl` TEXT NULL;
+
+ALTER TABLE `PropertyImage`
+  MODIFY COLUMN `url` TEXT NOT NULL;

@@ -1,6 +1,7 @@
 import { ListingSource, Prisma, VerificationLevel } from '@prisma/client';
-import { prisma } from '../prisma/client';
-import { canonicalLocationName, slugifyLocation } from '../utils/location';
+import { prisma } from '../prisma/client.js';
+import { canonicalLocationName, slugifyLocation } from '../utils/location.js';
+import { isAdminRole, isSellerRole } from '../utils/roles.js';
 
 type PropertyActor = {
   id: number;
@@ -29,19 +30,21 @@ const buildTrustState = (
     longitude: number | null;
   },
 ) => {
-  const isAdmin = role === 'Admin';
+  const isAdmin = isAdminRole(role);
   const verificationLevel =
     isAdmin && data.verificationLevel
       ? (data.verificationLevel as VerificationLevel)
       : current?.verificationLevel || VerificationLevel.BASIC;
-  const verified = isAdmin ? (typeof data.verified === 'boolean' ? data.verified : verificationLevel === VerificationLevel.VERIFIED) : verificationLevel === VerificationLevel.VERIFIED;
+  const verified = isAdmin
+    ? (typeof data.verified === 'boolean' ? data.verified : (current?.verified ?? verificationLevel === VerificationLevel.VERIFIED))
+    : verificationLevel === VerificationLevel.VERIFIED;
   const listingSource = isAdmin
     ? ((data.listingSource as ListingSource | undefined) || current?.listingSource || ListingSource.ADMIN_IMPORT)
     : current?.listingSource || ListingSource.AGENT;
   const responseTimeHours =
     typeof data.responseTimeHours === 'number'
       ? data.responseTimeHours
-      : current?.responseTimeHours ?? (role === 'Agent' ? 2 : 4);
+      : current?.responseTimeHours ?? (isSellerRole(role) ? 2 : 4);
   const lastVerifiedAt =
     isAdmin && data.lastVerifiedAt
       ? new Date(data.lastVerifiedAt)
@@ -117,11 +120,11 @@ export const list = async (query: any) => {
 
   if (query.q) {
     where.OR = [
-      { title: { contains: query.q, mode: 'insensitive' } },
-      { description: { contains: query.q, mode: 'insensitive' } },
+      { title: { contains: query.q } },
+      { description: { contains: query.q } },
     ];
   }
-  if (query.location) where.location = { contains: query.location, mode: 'insensitive' };
+  if (query.location) where.location = { contains: query.location };
   if (query.type) where.type = query.type;
   if (query.status) where.status = query.status;
   if (query.verified === 'true') where.verified = true;
@@ -164,7 +167,7 @@ export const create = async (user: PropertyActor, data: any) => {
   const amenities = Array.isArray(data.amenities) ? data.amenities : [];
   const images = Array.isArray(data.images) ? data.images : [];
   const qualityScore =
-    user.role === 'Admin' && typeof data.qualityScore === 'number'
+    isAdminRole(user.role) && typeof data.qualityScore === 'number'
       ? data.qualityScore
       : calculateQualityScore({
           description: data.description,
@@ -189,6 +192,7 @@ export const create = async (user: PropertyActor, data: any) => {
       bedrooms: data.bedrooms,
       bathrooms: data.bathrooms,
       areaSqFt: data.areaSqFt,
+      videoUrl: data.videoUrl || null,
       status: data.status || 'AVAILABLE',
       verified: trust.verified,
       verificationLevel: trust.verificationLevel,
@@ -218,7 +222,7 @@ export const update = async (id: number, user: PropertyActor, data: any) => {
     include: { images: true, amenities: { include: { amenity: true } } },
   });
   if (!property) throw { status: 404, message: 'Property not found' };
-  if (user.role !== 'Admin' && property.agentId !== user.id) throw { status: 403, message: 'Forbidden' };
+  if (!isAdminRole(user.role) && property.agentId !== user.id) throw { status: 403, message: 'Forbidden' };
 
   const amenities = Array.isArray(data.amenities) ? data.amenities : property.amenities.map((item) => item.amenity.name);
   const images = Array.isArray(data.images) ? data.images : property.images.map((image) => image.url);
@@ -243,7 +247,7 @@ export const update = async (id: number, user: PropertyActor, data: any) => {
   const nextLatitude = data.latitude === undefined ? property.latitude : data.latitude;
   const nextLongitude = data.longitude === undefined ? property.longitude : data.longitude;
   const qualityScore =
-    user.role === 'Admin' && typeof data.qualityScore === 'number'
+    isAdminRole(user.role) && typeof data.qualityScore === 'number'
       ? data.qualityScore
       : calculateQualityScore({
           description: nextDescription,
@@ -269,6 +273,7 @@ export const update = async (id: number, user: PropertyActor, data: any) => {
       bedrooms: data.bedrooms,
       bathrooms: data.bathrooms,
       areaSqFt: data.areaSqFt,
+      videoUrl: data.videoUrl,
       status: data.status,
       verified: trust.verified,
       verificationLevel: trust.verificationLevel,
@@ -300,6 +305,6 @@ export const update = async (id: number, user: PropertyActor, data: any) => {
 export const remove = async (id: number, user: PropertyActor) => {
   const property = await prisma.property.findUnique({ where: { id } });
   if (!property) throw { status: 404, message: 'Property not found' };
-  if (user.role !== 'Admin' && property.agentId !== user.id) throw { status: 403, message: 'Forbidden' };
+  if (!isAdminRole(user.role) && property.agentId !== user.id) throw { status: 403, message: 'Forbidden' };
   await prisma.property.delete({ where: { id } });
 };

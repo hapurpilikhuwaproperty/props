@@ -12,7 +12,20 @@ export class ServerApiError extends Error {
   }
 }
 
-const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000';
+const configuredBackendUrl =
+  process.env.SERVER_BACKEND_URL ||
+  process.env.BACKEND_PROXY_TARGET ||
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  'http://localhost:4000';
+const backendUrl = /^https?:\/\//.test(configuredBackendUrl)
+  ? configuredBackendUrl
+  : process.env.BACKEND_PROXY_TARGET || 'https://api.hapurpilikhuwaproperty.in';
+const serverApiTimeoutMs = Number(process.env.SERVER_API_TIMEOUT_MS || 8000);
+
+const createTimeoutSignal = () => {
+  const timeout = (AbortSignal as typeof AbortSignal & { timeout?: (milliseconds: number) => AbortSignal }).timeout;
+  return timeout ? timeout(serverApiTimeoutMs) : undefined;
+};
 
 const appendQueryValue = (searchParams: URLSearchParams, key: string, value: ServerQueryValue) => {
   if (value === undefined || value === null || value === '') return;
@@ -38,6 +51,7 @@ export async function getServerJson<T>(
 
   const response = await fetch(url, {
     next: { revalidate },
+    signal: createTimeoutSignal(),
   });
 
   if (!response.ok) {

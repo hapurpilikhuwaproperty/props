@@ -1,14 +1,17 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
-import { api } from "./api";
+import { api, authExpiredEvent } from "./api";
 
 type SessionUser = {
   id: number;
   name: string;
-  email: string;
+  email: string | null;
   phone?: string | null;
   verified?: boolean;
+  emailVerified?: boolean;
+  phoneVerified?: boolean;
+  sellerVerificationStatus?: string;
   role: string;
 };
 
@@ -59,6 +62,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => controller.abort();
   }, []);
 
+  useEffect(() => {
+    const handleAuthExpired = () => {
+      setUser(null);
+      setIsReady(true);
+    };
+
+    window.addEventListener(authExpiredEvent, handleAuthExpired);
+    return () => window.removeEventListener(authExpiredEvent, handleAuthExpired);
+  }, []);
+
   const value = useMemo(
     () => ({
       isAuthed: !!user,
@@ -90,5 +103,5 @@ export function useAuth() {
 }
 
 export function canManageProperties(role: string | null) {
-  return role === "admin" || role === "agent";
+  return role === "admin" || role === "seller" || role === "agent";
 }
