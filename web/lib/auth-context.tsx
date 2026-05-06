@@ -26,6 +26,34 @@ type AuthState = {
 };
 
 const normalizeRole = (role: unknown) => (typeof role === "string" ? role.trim().toLowerCase() : null);
+const authStorageKey = "props:has-auth-session";
+
+const setAuthMarker = (enabled: boolean) => {
+  if (typeof window === "undefined") return;
+  try {
+    if (enabled) {
+      window.localStorage.setItem(authStorageKey, "1");
+    } else {
+      window.localStorage.removeItem(authStorageKey);
+    }
+  } catch {
+    // Storage can be unavailable in private browsing or restricted contexts.
+  }
+};
+
+const hasAuthMarker = () => {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(authStorageKey) === "1";
+  } catch {
+    return false;
+  }
+};
+
+const shouldCheckSessionOnLoad = () => {
+  if (typeof window === "undefined") return false;
+  return hasAuthMarker() || window.location.pathname.startsWith("/dashboard");
+};
 
 const AuthContext = createContext<AuthState>({
   isAuthed: false,
@@ -46,9 +74,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { data } = await api.get("/auth/session", { signal });
       if (signal?.aborted) return;
       setUser(data.user);
+      setAuthMarker(true);
     } catch (error: any) {
       if (error?.code === "ERR_CANCELED") return;
       setUser(null);
+      setAuthMarker(false);
     } finally {
       if (!signal?.aborted) {
         setIsReady(true);
@@ -58,6 +88,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const controller = new AbortController();
+    if (!shouldCheckSessionOnLoad()) {
+      setIsReady(true);
+      return () => controller.abort();
+    }
+
     void refreshSession(controller.signal);
     return () => controller.abort();
   }, []);
@@ -65,6 +100,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const handleAuthExpired = () => {
       setUser(null);
+      setAuthMarker(false);
       setIsReady(true);
     };
 
@@ -80,6 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isReady,
       login: (nextUser: SessionUser) => {
         setUser(nextUser);
+        setAuthMarker(true);
         setIsReady(true);
       },
       logout: async () => {
@@ -87,6 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await api.post("/auth/logout");
         } finally {
           setUser(null);
+          setAuthMarker(false);
           window.location.href = "/";
         }
       },

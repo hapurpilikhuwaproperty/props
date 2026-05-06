@@ -248,10 +248,10 @@ export default function LoginClient() {
 
           <div
             className="absolute bottom-0 right-[-38px] h-[43%] w-[86%] bg-cover bg-bottom bg-no-repeat md:h-[38%] md:w-[88%]"
-            style={{
-              backgroundImage:
-                'linear-gradient(180deg, rgba(247,251,255,0) 0%, rgba(247,251,255,0.08) 100%), url(https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1000&q=85)',
-            }}
+            // style={{
+            //   backgroundImage:
+            //     'linear-gradient(180deg, rgba(247,251,255,0) 0%, rgba(247,251,255,0.08) 100%), url(https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1000&q=85)',
+            // }}
           />
         </aside>
 

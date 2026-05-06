@@ -41,6 +41,7 @@ export default function PropertyForm({ mode, initialProperty }: PropertyFormProp
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [images, setImages] = useState<string[]>(() => getImageUrls(initialProperty));
   const [amenities, setAmenities] = useState<string[]>(() => getAmenityNames(initialProperty));
   const [imageUrlDraft, setImageUrlDraft] = useState("");
@@ -126,6 +127,7 @@ export default function PropertyForm({ mode, initialProperty }: PropertyFormProp
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError("");
+    setSuccess("");
     setLoading(true);
 
     try {
@@ -154,11 +156,17 @@ export default function PropertyForm({ mode, initialProperty }: PropertyFormProp
         images,
       } as any;
 
-      const { data } = isEditing && initialProperty
+      const response = isEditing && initialProperty
         ? await api.put(`/properties/${initialProperty.id}`, payload)
         : await api.post("/properties", payload);
 
-      router.push(`/properties/${data.id}`);
+      if (isEditing) {
+        setSuccess("Property updated. You can continue editing.");
+        router.refresh();
+        return;
+      }
+
+      router.push(`/properties/${response.data.id}`);
       router.refresh();
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || `Failed to ${isEditing ? "update" : "create"} property`);
@@ -170,6 +178,7 @@ export default function PropertyForm({ mode, initialProperty }: PropertyFormProp
   return (
     <form className="space-y-4 bg-white p-6 rounded-2xl border" onSubmit={handleSubmit}>
       {error && <p className="text-sm text-red-600">{error}</p>}
+      {success && <p className="text-sm text-emerald-700">{success}</p>}
 
       <div className="grid md:grid-cols-2 gap-4">
         <input name="title" required defaultValue={initialProperty?.title || ""} placeholder="Title" className="border rounded-lg px-3 py-2" />

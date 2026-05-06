@@ -15,6 +15,8 @@ import { LocalitySummary, Property } from '../types';
 import LocalitySpotlight from '../components/LocalitySpotlight';
 import { getServerJson } from '../lib/server-api';
 
+export const dynamic = 'force-dynamic';
+
 async function fetchFeatured(): Promise<Property[]> {
   try {
     const data = await getServerJson<{ items: Property[] }>('/properties', { params: { pageSize: 6 }, revalidate: 300 });
@@ -45,11 +47,11 @@ export default async function HomePage() {
   const [featured, latest, localities] = await Promise.all([fetchFeatured(), fetchLatest(), fetchLocalities()]);
   return (
     <div>
-      <Hero />
+      <Hero properties={latest.length ? latest : featured} />
+      <FeaturedGrid properties={featured} />
+      <LatestPropertySlider properties={latest} />
       <TrustBar />
       <LogosStrip />
-      <LatestPropertySlider properties={latest} />
-      <FeaturedGrid properties={featured} />
       <TrendingGrid properties={featured} />
       <LocalitySpotlight items={localities} />
       <Categories />

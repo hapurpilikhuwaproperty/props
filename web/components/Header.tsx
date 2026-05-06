@@ -1,16 +1,23 @@
 'use client';
+
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import {
+  Bars3Icon,
+  BuildingOffice2Icon,
+  MagnifyingGlassIcon,
+  PlusIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline';
 import clsx from 'clsx';
 import { canManageProperties, useAuth } from '../lib/auth-context';
-import { BRAND } from '../lib/constants';
 
-const links = [
-  { href: '/', label: 'Home' },
-  { href: '/properties', label: 'Properties' },
-  { href: '/dashboard', label: 'Dashboard' },
+const primaryLinks = [
+  { href: '/properties?type=APARTMENT', label: 'Buy' },
+  { href: '/properties?status=AVAILABLE', label: 'Rent' },
+  { href: '/properties?type=PLOT', label: 'Plots' },
+  { href: '/properties?type=COMMERCIAL', label: 'Commercial' },
 ];
 
 export default function Header() {
@@ -20,80 +27,104 @@ export default function Header() {
   const canAddProperty = canManageProperties(role);
   const isAdmin = role === 'admin';
 
+  const closeMenu = () => setOpen(false);
+
   return (
-    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur border-b border-slate-200 shadow">
-      <div className="container flex items-center justify-between py-4">
-        <Link href="/" className="text-xl font-semibold text-brand">{BRAND.NAME}</Link>
-        <nav className="hidden md:flex gap-6">
-          {links.map((link) => (
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
+      <div className="container flex h-[70px] items-center justify-between gap-4">
+        <Link href="/" className="flex items-center gap-3">
+          <span className="grid h-11 w-11 place-items-center rounded-2xl bg-[#003a80] text-white shadow-sm">
+            <BuildingOffice2Icon className="h-6 w-6" />
+          </span>
+          <span className="min-w-0">
+            <span className="block text-lg font-extrabold leading-tight tracking-normal text-slate-950 md:text-xl">
+              Hapur-Pilkhuwa-Properties
+            </span>
+            <span className="block text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500">
+              Hapur · Pilkhuwa
+            </span>
+          </span>
+        </Link>
+
+        <nav className="hidden items-center gap-8 lg:flex">
+          {primaryLinks.map((link) => (
             <Link
-              key={link.href}
+              key={link.label}
               href={link.href}
-              className={clsx('text-sm font-medium hover:text-brand-accent transition-colors', {
-                'text-brand': pathname === link.href,
-                'text-slate-600': pathname !== link.href,
+              className={clsx('text-sm font-semibold transition-colors hover:text-[#003a80]', {
+                'text-[#003a80]': pathname === link.href,
+                'text-slate-700': pathname !== link.href,
               })}
             >
               {link.label}
             </Link>
           ))}
           {isAuthed && (
-            <Link
-              href="/dashboard/shortlists"
-              className={clsx('text-sm font-medium hover:text-brand-accent transition-colors', {
-                'text-brand': pathname === '/dashboard/shortlists',
-                'text-slate-600': pathname !== '/dashboard/shortlists',
-              })}
-            >
-              Shortlists
+            <Link href="/dashboard" className="text-sm font-semibold text-slate-700 transition-colors hover:text-[#003a80]">
+              Dashboard
             </Link>
           )}
         </nav>
-        <div className="hidden md:flex items-center gap-3">
+
+        <div className="hidden items-center gap-4 md:flex">
+          <Link href="/properties" aria-label="Search properties" className="grid h-10 w-10 place-items-center rounded-full text-slate-800 hover:bg-slate-100">
+            <MagnifyingGlassIcon className="h-5 w-5" />
+          </Link>
           {isAuthed ? (
             <>
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium uppercase text-slate-600">{role}</span>
-              {isAdmin && <Link href="/dashboard/users" className="text-sm">Users</Link>}
-              {canAddProperty && <Link href="/dashboard/properties" className="text-sm">Properties</Link>}
-              {canAddProperty && <Link href="/dashboard/properties/new" className="text-sm">Add property</Link>}
-              <button onClick={logout} className="text-sm text-slate-600 hover:text-brand">Logout</button>
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold uppercase text-slate-600">{role}</span>
+              {isAdmin && <Link href="/dashboard/users" className="text-sm font-semibold text-slate-700">Users</Link>}
+              {canAddProperty && (
+                <Link href="/dashboard/properties/new" className="inline-flex items-center gap-2 rounded-2xl bg-[#ff7826] px-5 py-3 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-[#ff8a3d]">
+                  <PlusIcon className="h-5 w-5" />
+                  Post Property
+                </Link>
+              )}
+              <button onClick={logout} className="text-sm font-semibold text-slate-600 hover:text-[#003a80]">Logout</button>
             </>
           ) : (
             <>
-              <Link href="/auth/login" className="text-sm">Login</Link>
-              <Link href="/auth/register" className="bg-brand text-white px-4 py-2 rounded-full text-sm font-medium">List a property</Link>
+              <Link href="/auth/login" className="text-sm font-semibold text-slate-700">Login</Link>
+              <Link href="/auth/register" className="inline-flex items-center gap-2 rounded-2xl bg-[#ff7826] px-5 py-3 text-sm font-bold text-slate-950 shadow-sm transition hover:bg-[#ff8a3d]">
+                <PlusIcon className="h-5 w-5" />
+                Post Property
+              </Link>
             </>
           )}
         </div>
-        <button className="md:hidden" onClick={() => setOpen(!open)}>
+
+        <button className="grid h-10 w-10 place-items-center rounded-full border md:hidden" onClick={() => setOpen(!open)} aria-label="Toggle navigation">
           {open ? <XMarkIcon className="h-6 w-6" /> : <Bars3Icon className="h-6 w-6" />}
         </button>
       </div>
+
       {open && (
-        <div className="md:hidden bg-white border-t border-slate-200">
-          {links.map((link) => (
-            <Link key={link.href} href={link.href} className="block px-4 py-3 border-b" onClick={() => setOpen(false)}>
+        <div className="border-t border-slate-200 bg-white md:hidden">
+          {[{ href: '/', label: 'Home' }, ...primaryLinks, { href: '/properties', label: 'Search' }].map((link) => (
+            <Link key={link.label} href={link.href} className="block px-4 py-3 text-sm font-semibold text-slate-700" onClick={closeMenu}>
               {link.label}
             </Link>
           ))}
           {isAuthed && (
-            <Link href="/dashboard/shortlists" className="block px-4 py-3 border-b" onClick={() => setOpen(false)}>
-              Shortlists
-            </Link>
+            <>
+              <Link href="/dashboard" className="block px-4 py-3 text-sm font-semibold text-slate-700" onClick={closeMenu}>Dashboard</Link>
+              {isAdmin && <Link href="/dashboard/users" className="block px-4 py-3 text-sm font-semibold text-slate-700" onClick={closeMenu}>Users</Link>}
+            </>
           )}
-          <div className="px-4 py-3 flex gap-3 items-center">
+          <div className="flex items-center gap-3 px-4 py-4">
             {isAuthed ? (
               <>
-                <span className="text-xs font-medium uppercase text-slate-500">{role}</span>
-                {isAdmin && <Link href="/dashboard/users" className="text-sm" onClick={() => setOpen(false)}>Users</Link>}
-                {canAddProperty && <Link href="/dashboard/properties" className="text-sm" onClick={() => setOpen(false)}>Properties</Link>}
-                <Link href="/dashboard" className="text-sm" onClick={() => setOpen(false)}>Dashboard</Link>
-                <button onClick={() => { logout(); setOpen(false); }} className="text-sm text-slate-600">Logout</button>
+                {canAddProperty && (
+                  <Link href="/dashboard/properties/new" className="rounded-2xl bg-[#ff7826] px-4 py-2 text-sm font-bold text-slate-950" onClick={closeMenu}>
+                    Post Property
+                  </Link>
+                )}
+                <button onClick={() => { void logout(); closeMenu(); }} className="text-sm font-semibold text-slate-600">Logout</button>
               </>
             ) : (
               <>
-                <Link href="/auth/login" className="text-sm" onClick={() => setOpen(false)}>Login</Link>
-                <Link href="/auth/register" className="bg-brand text-white px-4 py-2 rounded-full text-sm font-medium" onClick={() => setOpen(false)}>List a property</Link>
+                <Link href="/auth/login" className="text-sm font-semibold text-slate-700" onClick={closeMenu}>Login</Link>
+                <Link href="/auth/register" className="rounded-2xl bg-[#ff7826] px-4 py-2 text-sm font-bold text-slate-950" onClick={closeMenu}>Post Property</Link>
               </>
             )}
           </div>

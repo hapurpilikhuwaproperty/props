@@ -1,7 +1,7 @@
-const BRAND_NAME = process.env.NEXT_PUBLIC_BRAND_NAME || 'Property Platform';
-const PAGE_TITLE = process.env.NEXT_PUBLIC_PAGE_TITLE || 'Modern Real Estate';
+const BRAND_NAME = process.env.NEXT_PUBLIC_BRAND_NAME || 'Hapur Pilkhuwa Property';
+const PAGE_TITLE = process.env.NEXT_PUBLIC_PAGE_TITLE || 'Hapur Pilkhuwa Property';
 const META_DESCRIPTION =
-  process.env.NEXT_PUBLIC_META_DESCRIPTION || 'Discover curated properties with immersive visuals and seamless inquiry.';
+  process.env.NEXT_PUBLIC_META_DESCRIPTION || 'Discover curated properties in Hapur and Pilkhuwa.';
 
 export const BRAND = {
   NAME: BRAND_NAME,
@@ -13,7 +13,7 @@ export const BRAND = {
 };
 
 export const CONTACT = {
-  PHONE: process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+91 7678171738',
+  PHONE: process.env.NEXT_PUBLIC_SUPPORT_PHONE || '+917678171738',
   EMAIL: process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'hapurpilikhuwaproperty@gmail.com',
   WHATSAPP: process.env.NEXT_PUBLIC_WHATSAPP || '+917678171738',
 };

@@ -16,16 +16,11 @@ const configuredBackendUrl =
   process.env.SERVER_BACKEND_URL ||
   process.env.BACKEND_PROXY_TARGET ||
   process.env.NEXT_PUBLIC_BACKEND_URL ||
-  'http://localhost:4000';
+  'https://api.hapurpilikhuwaproperty.in';
 const backendUrl = /^https?:\/\//.test(configuredBackendUrl)
   ? configuredBackendUrl
   : process.env.BACKEND_PROXY_TARGET || 'https://api.hapurpilikhuwaproperty.in';
-const serverApiTimeoutMs = Number(process.env.SERVER_API_TIMEOUT_MS || 8000);
-
-const createTimeoutSignal = () => {
-  const timeout = (AbortSignal as typeof AbortSignal & { timeout?: (milliseconds: number) => AbortSignal }).timeout;
-  return timeout ? timeout(serverApiTimeoutMs) : undefined;
-};
+const serverApiTimeoutMs = Number(process.env.SERVER_API_TIMEOUT_MS || 3000);
 
 const appendQueryValue = (searchParams: URLSearchParams, key: string, value: ServerQueryValue) => {
   if (value === undefined || value === null || value === '') return;
@@ -49,9 +44,23 @@ export async function getServerJson<T>(
     }
   }
 
-  const response = await fetch(url, {
-    next: { revalidate },
-    signal: createTimeoutSignal(),
+  const controller = new AbortController();
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  const timeoutPromise = new Promise<Response>((_, reject) => {
+    timeoutId = setTimeout(() => {
+      controller.abort();
+      reject(new ServerApiError(504, `Backend request timed out after ${serverApiTimeoutMs}ms`));
+    }, serverApiTimeoutMs);
+  });
+
+  const response = await Promise.race([
+    fetch(url, {
+      next: { revalidate },
+      signal: controller.signal,
+    }),
+    timeoutPromise,
+  ]).finally(() => {
+    if (timeoutId) clearTimeout(timeoutId);
   });
 
   if (!response.ok) {

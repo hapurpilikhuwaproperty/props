@@ -1,14 +1,22 @@
 "use client";
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 import { api } from "../lib/api";
 
 type Props = {
   triggerClassName?: string;
   triggerLabel?: string;
+  triggerContent?: ReactNode;
+  triggerAriaLabel?: string;
   propertyId?: number;
 };
 
-export default function LeadModal({ triggerClassName = "", triggerLabel = "Talk to an expert", propertyId }: Props) {
+export default function LeadModal({
+  triggerClassName = "",
+  triggerLabel = "Talk to an expert",
+  triggerContent,
+  triggerAriaLabel,
+  propertyId,
+}: Props) {
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [msg, setMsg] = useState("");
@@ -39,9 +47,11 @@ export default function LeadModal({ triggerClassName = "", triggerLabel = "Talk 
     <>
       <button
         onClick={() => setOpen(true)}
+        aria-label={triggerAriaLabel || triggerLabel}
+        title={triggerAriaLabel || triggerLabel}
         className={`bg-brand text-white px-4 py-2 rounded-full shadow-lg hover:-translate-y-0.5 transition ${triggerClassName}`}
       >
-        {triggerLabel}
+        {triggerContent || triggerLabel}
       </button>
 
       {open && (

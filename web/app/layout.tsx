@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   title: BRAND.META_TITLE,
   description: BRAND.META_DESCRIPTION,
   other: {
-    'link:preconnect': ['https://images.unsplash.com', 'https://res.cloudinary.com', process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:4000'],
+    'link:preconnect': ['https://images.unsplash.com', 'https://res.cloudinary.com', process.env.NEXT_PUBLIC_BACKEND_URL || 'https://api.hapurpilikhuwaproperty.in'],
   },
 };
 
